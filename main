@@ -1,0 +1,823 @@
+# main.py
+import os
+import threading
+import traceback
+import customtkinter as ctk
+from tkinter import filedialog
+
+from ai_analysis import analyze_gameplay, verify_is_mlbb_gameplay
+from screen_recorder import ScreenRecorder
+
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+
+class MLGuideMobileApp(ctk.CTk):
+
+    def __init__(self):
+        super().__init__()
+
+        self.title("ML AI Guide Mobile")
+        self.geometry("390x810")
+        self.resizable(False, False)
+        self.configure(fg_color="#071426")
+
+        self.recorder = ScreenRecorder()
+
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_columnconfigure(0, weight=1)
+
+        self.create_top_bar()
+        self.create_bottom_nav()
+        self.open_home()
+
+    def create_top_bar(self):
+        self.top_bar = ctk.CTkFrame(self, height=55, corner_radius=0, fg_color="#0B1930")
+        self.top_bar.grid(row=0, column=0, sticky="ew")
+        self.top_bar.grid_propagate(False)
+
+        ctk.CTkLabel(
+            self.top_bar,
+            text="⚔ ML AI GUIDE",
+            font=("Arial", 16, "bold"),
+            text_color="#58C7FF"
+        ).pack(side="left", padx=16, pady=12)
+
+        ctk.CTkLabel(
+            self.top_bar,
+            text="MOBILE",
+            font=("Arial", 10, "bold"),
+            text_color="#8EA6C7",
+            fg_color="#10213B",
+            corner_radius=6,
+            padx=6,
+            pady=2
+        ).pack(side="right", padx=16)
+
+    def create_bottom_nav(self):
+        self.bottom_nav = ctk.CTkFrame(self, height=65, corner_radius=0, fg_color="#0B1930")
+        self.bottom_nav.grid(row=2, column=0, sticky="ew")
+        self.bottom_nav.grid_propagate(False)
+        self.bottom_nav.grid_columnconfigure((0, 1, 2, 3), weight=1)
+
+        self.btn_nav_home = ctk.CTkButton(
+            self.bottom_nav,
+            text="🏠\nHome",
+            font=("Arial", 10),
+            fg_color="transparent",
+            hover_color="#10213B",
+            text_color="#8EA6C7",
+            command=self.open_home
+        )
+        self.btn_nav_home.grid(row=0, column=0, sticky="nsew", pady=4)
+
+        self.btn_nav_analyze = ctk.CTkButton(
+            self.bottom_nav,
+            text="⚔️\nAnalyze",
+            font=("Arial", 10, "bold"),
+            fg_color="transparent",
+            hover_color="#10213B",
+            text_color="#8EA6C7",
+            command=self.open_analysis
+        )
+        self.btn_nav_analyze.grid(row=0, column=1, sticky="nsew", pady=4)
+
+        self.btn_nav_assess = ctk.CTkButton(
+            self.bottom_nav,
+            text="🎯\nAssess",
+            font=("Arial", 10),
+            fg_color="transparent",
+            hover_color="#10213B",
+            text_color="#8EA6C7",
+            command=self.open_assessment
+        )
+        self.btn_nav_assess.grid(row=0, column=2, sticky="nsew", pady=4)
+
+        self.btn_nav_history = ctk.CTkButton(
+            self.bottom_nav,
+            text="📊\nHistory",
+            font=("Arial", 10),
+            fg_color="transparent",
+            hover_color="#10213B",
+            text_color="#8EA6C7",
+            command=self.open_history
+        )
+        self.btn_nav_history.grid(row=0, column=3, sticky="nsew", pady=4)
+
+    def set_active_nav(self, active_btn):
+        for btn in (self.btn_nav_home, self.btn_nav_analyze, self.btn_nav_assess, self.btn_nav_history):
+            btn.configure(text_color="#8EA6C7")
+        active_btn.configure(text_color="#58C7FF")
+
+    def clear_content(self):
+        if hasattr(self, "content"):
+            self.content.destroy()
+
+        self.content = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        self.content.grid(row=1, column=0, sticky="nsew", padx=12, pady=8)
+        self.content.grid_columnconfigure(0, weight=1)
+
+    def open_home(self):
+        self.set_active_nav(self.btn_nav_home)
+        self.clear_content()
+
+        ctk.CTkLabel(
+            self.content,
+            text="Welcome Back,",
+            font=("Arial", 14),
+            text_color="#8EA6C7"
+        ).pack(anchor="w", pady=(10, 0))
+
+        ctk.CTkLabel(
+            self.content,
+            text="ML AI GUIDE",
+            font=("Arial", 22, "bold"),
+            text_color="#FFFFFF"
+        ).pack(anchor="w", pady=(0, 15))
+
+        hero_card = ctk.CTkFrame(
+            self.content, corner_radius=16, fg_color="#142C50", border_width=1, border_color="#2676BC"
+        )
+        hero_card.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(
+            hero_card, text="LEVEL UP GAMEPLAY", font=("Arial", 16, "bold"), text_color="#66D3FF"
+        ).pack(anchor="w", padx=16, pady=(16, 6))
+
+        ctk.CTkLabel(
+            hero_card,
+            text="Run local TensorFlow MobileNetV2 computer vision models to evaluate your matches.",
+            font=("Arial", 12),
+            text_color="#E3ECFA",
+            wraplength=320,
+            justify="left",
+        ).pack(anchor="w", padx=16, pady=2)
+
+        ctk.CTkButton(
+            hero_card,
+            text="Start Analysis  →",
+            height=40,
+            corner_radius=8,
+            fg_color="#356DFF",
+            hover_color="#254FD1",
+            font=("Arial", 13, "bold"),
+            command=self.open_analysis,
+        ).pack(fill="x", padx=16, pady=(14, 16))
+
+        ctk.CTkLabel(
+            self.content, text="QUICK ACTIONS", font=("Arial", 14, "bold"), text_color="#FFFFFF"
+        ).pack(anchor="w", pady=(20, 8))
+
+        self.create_mobile_card("⚔️ Analyze Match", "Record or upload gameplay video clip.", self.open_analysis)
+        self.create_mobile_card("🎯 Role Assessment", "Test scenario decisions using local clips.", self.open_assessment)
+        self.create_mobile_card("📜 Match History", "Review previous AI coaching reports.", self.open_history)
+
+    def create_mobile_card(self, title, description, command):
+        card = ctk.CTkFrame(
+            self.content, corner_radius=12, fg_color="#10213B", border_width=1, border_color="#233D60"
+        )
+        card.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(card, text=title, font=("Arial", 14, "bold"), text_color="#FFFFFF").pack(
+            anchor="w", padx=14, pady=(12, 2)
+        )
+
+        ctk.CTkLabel(
+            card, text=description, font=("Arial", 11), text_color="#A7B9D4", wraplength=320, justify="left"
+        ).pack(anchor="w", padx=14, pady=(0, 10))
+
+        card.bind("<Button-1>", lambda e: command())
+
+    def open_analysis(self):
+        self.set_active_nav(self.btn_nav_analyze)
+        self.clear_content()
+
+        ctk.CTkLabel(
+            self.content, text="AI MATCH ANALYSIS", font=("Arial", 20, "bold"), text_color="#FFFFFF"
+        ).pack(anchor="w", pady=(10, 10))
+
+        self.analysis_box = ctk.CTkFrame(
+            self.content, corner_radius=14, fg_color="#10213B", border_width=1, border_color="#233D60"
+        )
+        self.analysis_box.pack(fill="x", pady=5, ipady=10)
+
+        self.status_label = ctk.CTkLabel(
+            self.analysis_box,
+            text="Record screen during gameplay or upload an MLBB .mp4 video clip.",
+            font=("Arial", 12),
+            text_color="#A7B9D4",
+            wraplength=320,
+            justify="center",
+        )
+        self.status_label.pack(pady=(12, 12), padx=14)
+
+        self.record_btn = ctk.CTkButton(
+            self.analysis_box,
+            text="🔴 Start Screen Recording",
+            height=44,
+            font=("Arial", 13, "bold"),
+            fg_color="#D32F2F",
+            hover_color="#9A0007",
+            command=self.toggle_recording,
+        )
+        self.record_btn.pack(fill="x", padx=14, pady=4)
+
+        self.upload_btn = ctk.CTkButton(
+            self.analysis_box,
+            text="📁 Upload Video File (.mp4)",
+            height=44,
+            font=("Arial", 13, "bold"),
+            fg_color="#356DFF",
+            hover_color="#254FD1",
+            command=self.select_video_file,
+        )
+        self.upload_btn.pack(fill="x", padx=14, pady=(4, 10))
+
+        self.results_frame = ctk.CTkFrame(self.content, fg_color="transparent")
+        self.results_frame.pack(fill="x", pady=10)
+
+    def toggle_recording(self):
+        if not self.recorder.is_recording:
+            if os.path.exists(self.recorder.output_filename):
+                try:
+                    os.remove(self.recorder.output_filename)
+                except Exception:
+                    pass
+
+            self.recorder.start_recording()
+            self.record_btn.configure(text="⏹️ Stop & Analyze Match", fg_color="#FF8800", hover_color="#CC6600")
+            self.upload_btn.configure(state="disabled")
+            self.status_label.configure(
+                text="🎥 Recording screen... Play your match now! Tap 'Stop & Analyze' when finished.",
+                text_color="#66D3FF",
+            )
+        else:
+            self.record_btn.configure(state="disabled")
+            self.status_label.configure(
+                text="⏳ Stopping recording and verifying clip...",
+                text_color="#FFCC00",
+            )
+            video_file = self.recorder.stop_recording()
+            self.start_ai_pipeline(video_file)
+
+    def select_video_file(self):
+        file_path = filedialog.askopenfilename(
+            title="Select Match Recording",
+            filetypes=[("MP4 Video Files", "*.mp4"), ("All Video Files", "*.mp4 *.mov *.avi *.mkv")]
+        )
+        if file_path:
+            self.start_ai_pipeline(file_path)
+
+    def start_ai_pipeline(self, video_path):
+        # 1. UI Validation Check: Missing input or empty file
+        if not video_path or not os.path.exists(video_path) or os.path.getsize(video_path) == 0:
+            self._show_ui_alert("⚠️ Missing Input Video\nNo video file provided or recording is empty.")
+            self._reset_ui_state()
+            return
+
+        # 2. UI Validation Check: Invalid gameplay or short clip
+        is_valid, err_msg = verify_is_mlbb_gameplay(video_path)
+        if not is_valid:
+            self._show_ui_alert(f"❌ Analysis Blocked\n{err_msg}")
+            self._reset_ui_state()
+            return
+
+        # Passed validation
+        self.upload_btn.configure(state="disabled")
+        self.record_btn.configure(state="disabled")
+        self.status_label.configure(
+            text="⏳ Valid MLBB clip detected. Running MobileNetV2 inference...",
+            text_color="#66D3FF",
+        )
+
+        threading.Thread(
+            target=self._run_analysis_thread, args=(video_path,), daemon=True
+        ).start()
+
+    def _show_ui_alert(self, message):
+        """Displays an in-app error/warning box inside the UI instead of a system popup."""
+        for widget in self.results_frame.winfo_children():
+            widget.destroy()
+
+        alert_card = ctk.CTkFrame(self.results_frame, fg_color="#3B1414", corner_radius=10, border_width=1, border_color="#FF5555")
+        alert_card.pack(fill="x", pady=6)
+
+        ctk.CTkLabel(
+            alert_card,
+            text=message,
+            font=("Arial", 11, "bold"),
+            text_color="#FF8888",
+            wraplength=310,
+            justify="left",
+        ).pack(anchor="w", padx=12, pady=12)
+
+    def _reset_ui_state(self):
+        self.upload_btn.configure(state="normal")
+        self.record_btn.configure(
+            text="🔴 Start Screen Recording",
+            fg_color="#D32F2F",
+            hover_color="#9A0007",
+            state="normal",
+        )
+        self.status_label.configure(
+            text="Record screen during gameplay or upload an MLBB .mp4 video clip.",
+            text_color="#A7B9D4",
+        )
+
+    def _run_analysis_thread(self, video_path):
+        try:
+            results = analyze_gameplay(video_path)
+            self.after(0, self._display_analysis_results, results)
+        except Exception as e:
+            traceback.print_exc()
+            self.after(0, self._handle_analysis_error, str(e))
+
+    def _display_analysis_results(self, results):
+        self._reset_ui_state()
+        self.status_label.configure(text="✅ MobileNetV2 Analysis Complete!", text_color="#55FF55")
+
+        for widget in self.results_frame.winfo_children():
+            widget.destroy()
+
+        summary_text = results.get("summary", "No summary provided.")
+        summary_card = ctk.CTkFrame(self.results_frame, fg_color="#142C50", corner_radius=10)
+        summary_card.pack(fill="x", pady=6)
+
+        ctk.CTkLabel(
+            summary_card, text="KERAS EVALUATION", font=("Arial", 14, "bold"), text_color="#66D3FF"
+        ).pack(anchor="w", padx=12, pady=(10, 4))
+
+        ctk.CTkLabel(
+            summary_card,
+            text=summary_text,
+            font=("Arial", 11),
+            text_color="#E3ECFA",
+            wraplength=310,
+            justify="left",
+        ).pack(anchor="w", padx=12, pady=(0, 10))
+
+        keypoints = results.get("keypoints", [])
+        for kp in keypoints:
+            card = ctk.CTkFrame(self.results_frame, fg_color="#10213B", corner_radius=8)
+            card.pack(fill="x", pady=4)
+
+            timestamp = kp.get("timestamp", "00:00")
+            obs = kp.get("observed_action", "")
+            advice = kp.get("how_to_improve", "")
+
+            ctk.CTkLabel(
+                card, text=f"⏱ Timestamp: {timestamp}", font=("Arial", 12, "bold"), text_color="#58C7FF"
+            ).pack(anchor="w", padx=10, pady=(8, 2))
+
+            ctk.CTkLabel(
+                card,
+                text=f"Detection: {obs}",
+                font=("Arial", 11),
+                text_color="#FFFFFF",
+                wraplength=310,
+                justify="left",
+            ).pack(anchor="w", padx=10, pady=2)
+
+            ctk.CTkLabel(
+                card,
+                text=f"Recommendation: {advice}",
+                font=("Arial", 11, "italic"),
+                text_color="#A7B9D4",
+                wraplength=310,
+                justify="left",
+            ).pack(anchor="w", padx=10, pady=(2, 8))
+
+    def _handle_analysis_error(self, error_message):
+        self._reset_ui_state()
+        self.status_label.configure(text="❌ Analysis aborted.", text_color="#FF5555")
+        self._show_ui_alert(f"❌ Analysis Error\n{error_message}")
+
+    def open_assessment(self):
+        self.set_active_nav(self.btn_nav_assess)
+        self.clear_content()
+
+        self.quiz_questions = [
+            {
+                "role": "🔮 Mid Lane Scenario",
+                "question": "You have successfully cleared your minion wave first. The enemy Mid Laner is missing, and your Jungler is starting the Turtle on the bottom side. What is your best play?",
+                "options": [
+                    "A) Stay in lane and hit the enemy tower alone",
+                    "B) Rotate quickly down to support the Turtle secure and provide vision control",
+                    "C) Recall to base to buy a magic crystal",
+                    "D) Hide in your own tower and wait for minions"
+                ],
+                "answer": 1
+            },
+            {
+                "role": "💰 Gold Lane Scenario",
+                "question": "You are playing a scaling Marksman (e.g., Claude/Aldous) against an early-game bully in the Gold Lane. How should you play the first 3 minutes?",
+                "options": [
+                    "A) Trade blows aggressively every time abilities are off cooldown",
+                    "B) Play safe near your tower, last-hit minions carefully, and avoid unnecessary trades",
+                    "C) Leave the lane completely to roam top",
+                    "D) Hide in the bush and let the enemy freeze the wave"
+                ],
+                "answer": 1
+            },
+            {
+                "role": "🛡️ Exp Lane Scenario",
+                "question": "It's minute 4, and Lord is spawning soon. As an Exp Lane sustain fighter, what is your primary objective right now?",
+                "options": [
+                    "A) Push down the bottom tier-2 tower all the way",
+                    "B) Clear your lane quickly and set up a freeze near your side",
+                    "C) Pull off a timely 'Turtle/Lord setup rotation' or prepare to join the teamfight with a spell/ultimate advantage",
+                    "D) Jungle your own jungle camps while ignoring the map"
+                ],
+                "answer": 2
+            },
+            {
+                "role": "🗡️ Jungle Lane Scenario",
+                "question": "Your team is behind in gold, but your Retribution is up and the enemy team is carelessly attempting Lord without vision control. What should you do?",
+                "options": [
+                    "A) Run away to clear side lane minion waves",
+                    "B) Coordinate with your team for a sneaky steal opportunity using Retribution from the pit bush",
+                    "C) Type surrender vote immediately",
+                    "D) Farm your red buff to catch up in levels"
+                ],
+                "answer": 1
+            },
+            {
+                "role": "🤝 Roam Lane Scenario",
+                "question": "Your Marksman is getting heavily pressured and constantly ganked by the enemy Roamer and Jungler. As the team's Roamer, what is your best response?",
+                "options": [
+                    "A) Blame your Marksman in chat for feeding",
+                    "B) Stay permanently in the Gold Lane to protect and zone for them, buying them breathing room",
+                    "C) Ignore them and babysit the Exp laner instead",
+                    "D) Farm enemy jungle monsters alone"
+                ],
+                "answer": 1
+            }
+        ]
+
+        self.current_q_idx = 0
+        self.user_score = 0
+        self.render_quiz_question()
+
+    def open_assessment(self):
+        self.set_active_nav(self.btn_nav_assess)
+        self.clear_content()
+
+        ctk.CTkLabel(
+            self.content, text="CHOOSE YOUR ROLE", font=("Arial", 20, "bold"), text_color="#FFFFFF"
+        ).pack(anchor="w", pady=(10, 5))
+
+        ctk.CTkLabel(
+            self.content, text="Select a role to test your specialized game sense and tactical decision-making.", font=("Arial", 12), text_color="#A7B9D4", wraplength=320, justify="left"
+        ).pack(anchor="w", pady=(0, 15))
+
+        roles = [
+            ("🔮 Mid Lane", "Mage / Control", "Focus on wave clearing, fast map rotations, and objective spell synergy."),
+            ("💰 Gold Lane", "Marksman / Scaling", "Master spacing, last-hitting, farming tempo, and late-game positioning."),
+            ("🛡️ Exp Lane", "Fighter / Sustain", "Manage wave freezing, split-push pressure, and teamfight initiation timing."),
+            ("🗡️ Jungle Lane", "Assassin / Core", "Optimize farming efficiency, objective securing with Retribution, and backline picks."),
+            ("🤝 Roam Lane", "Tank / Support", "Provide map vision, protect main carries, and control engagement choke points.")
+        ]
+
+        for title, subtitle, desc in roles:
+            card = ctk.CTkFrame(self.content, corner_radius=12, fg_color="#10213B", border_width=1, border_color="#233D60")
+            card.pack(fill="x", pady=6)
+
+            ctk.CTkLabel(card, text=title, font=("Arial", 14, "bold"), text_color="#66D3FF").pack(
+                anchor="w", padx=14, pady=(10, 0)
+            )
+            ctk.CTkLabel(card, text=subtitle, font=("Arial", 10, "bold"), text_color="#58C7FF").pack(
+                anchor="w", padx=14, pady=(0, 2)
+            )
+            ctk.CTkLabel(
+                card, text=desc, font=("Arial", 11), text_color="#E3ECFA", wraplength=310, justify="left"
+            ).pack(anchor="w", padx=14, pady=(0, 10))
+
+            card.bind("<Button-1>", lambda e, r=title: self.start_role_quiz(r))
+            for child in card.winfo_children():
+                child.bind("<Button-1>", lambda e, r=title: self.start_role_quiz(r))
+
+    def start_role_quiz(self, role_title):
+        # Comprehensive scenario banks per role
+        role_banks = {
+            "🔮 Mid Lane": [
+                {
+                    "question": "You successfully cleared your wave first. The enemy Mid Laner is missing, and your Jungler is starting Turtle. What is your best play?",
+                    "options": [
+                        "A) Hit the enemy tower alone",
+                        "B) Rotate quickly down to support Turtle secure and provide vision control",
+                        "C) Recall to base immediately",
+                        "D) Wait under your tower"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "The enemy Mage is building heavy Magic Defense early. What item adjustment should you prioritize?",
+                    "options": [
+                        "A) Buy another defensive item",
+                        "B) Rush Genius Wand or Divine Glaive for magic penetration",
+                        "C) Sell your boots for physical items",
+                        "D) Stop buying items and save gold"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "A teamfight is breaking out near the top river bush, but your ultimate ability is currently on cooldown (15 seconds remaining). What do you do?",
+                    "options": [
+                        "K) Jump straight into the front line",
+                        "B) Ping your ultimate cooldown, poke safely from a distance, and wait for your skill before committing hard",
+                        "C) Ignore your team entirely and clear bot lane minions",
+                        "D) Type surrender in chat"
+                    ],
+                    "answer": 1
+                }
+            ],
+            "💰 Gold Lane": [
+                {
+                    "question": "You are playing a scaling Marksman against an early-game bully. How should you play the first 3 minutes?",
+                    "options": [
+                        "A) Trade blows aggressively every time",
+                        "B) Play safe near your tower, last-hit carefully, and avoid unnecessary trades",
+                        "C) Leave lane to permanently roam top",
+                        "D) Hide in the enemy bush"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "The enemy Jungler has ganked your lane twice through the bush. You have no battle spell (Purify/Flicker). What is your positioning rule?",
+                    "options": [
+                        "A) Step up aggressively to bait them",
+                        "B) Hug the inner side of your turret range and freeze the wave closer to safety until your spell is back",
+                        "C) Push past the river alone",
+                        "D) Stand in the middle of the lane dancing"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "It's the late game and your team is contesting Lord. Where should you position during the clash?",
+                    "options": [
+                        "A) Frontline right in front of your Tank",
+                        "B) Behind your frontline Tank/Roamer, dealing continuous safe damage to the closest target",
+                        "C) Back in your base clearing minion waves",
+                        "D) Chasing a full-health enemy tank into the jungle"
+                    ],
+                    "answer": 1
+                }
+            ],
+            "🛡️ Exp Lane": [
+                {
+                    "question": "It's minute 4, and Lord is spawning soon. As an Exp Lane sustain fighter, what is your primary objective right now?",
+                    "options": [
+                        "A) Push bottom lane tier-2 tower all the way",
+                        "B) Clear lane quickly and set up rotation/positioning for the upcoming Lord objective",
+                        "C) Farm your own jungle camps",
+                        "D) Recall and stay in base"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "You are facing an aggressive enemy push fighter who has a two-kill lead on you. How do you recover?",
+                    "options": [
+                        "A) Keep fighting them 1v1 until you win",
+                        "B) Play defensively, clear waves under tower, and request a gank from your Jungler",
+                        "C) Abandon your lane and ruin your Jungler's farm",
+                        "D) Stop moving entirely"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "The enemy team is grouping 5-man mid. You are holding teleport/split-push potential. What is the correct macro play?",
+                    "options": [
+                        "A) Push the opposite side lane to force a response or trade towers while your team defends",
+                        "B) Walk slowly down mid to join the meat grinder",
+                        "C) Clear wolves camp",
+                        "D) Type flame messages in chat"
+                    ],
+                    "answer": 0
+                }
+            ],
+            "🗡️️ Jungle Lane": [
+                {
+                    "question": "Your team is behind in gold, but your Retribution is up and the enemy is carelessly attempting Lord without vision control. What do you do?",
+                    "options": [
+                        "A) Run away to clear side waves",
+                        "B) Coordinate with your team for a sneaky steal opportunity using Retribution from the pit bush",
+                        "C) Surrender immediately",
+                        "D) Kill small rock creeps"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "Your Red Buff is about to spawn at the same time the Turtle is spawning on the opposite side of the map. What is the standard priority?",
+                    "options": [
+                        "A) Ignore Turtle completely and take Red Buff",
+                        "B) Secure the high-value objective (Turtle) with your team first, then come back for your jungle buffs",
+                        "C) Go AFK",
+                        "D) Attack the enemy base alone"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "An enemy laner is overextending with very low health right next to your jungle entrance. What is your reaction?",
+                    "options": [
+                        "A) Ignore them and hit jungle monsters",
+                        "B) Quick ambush/gank to secure the shutdown gold and pressure their lane",
+                        "C) Run away in fear",
+                        "D) Send a thumbs-up emoji"
+                    ],
+                    "answer": 1
+                }
+            ],
+            "🤝 Roam Lane": [
+                {
+                    "question": "Your Marksman is getting heavily pressured and constantly ganked. As the team's Roamer, what is your best response?",
+                    "options": [
+                        "A) Blame them in chat",
+                        "B) Pivot your rotation to stay closer to Gold Lane, providing vision in bushes and zoning enemy gankers",
+                        "C) Babysit the Exp laner instead",
+                        "D) Farm minion waves by yourself"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "Before an important teamfight, what is the most critical duty of the Roamer?",
+                    "options": [
+                        "A) Hide behind the Marksman",
+                        "B) Check and clear face-check bushes to establish vision control and prevent ambushes",
+                        "C) Clear minion waves in mid lane",
+                        "D) Stay in base shopping"
+                    ],
+                    "answer": 1
+                },
+                {
+                    "question": "Your team wins a teamfight and takes down 3 enemy heroes. As the Roamer, what call should you prioritize?",
+                    "options": [
+                        "A) Return to base to heal full health",
+                        "B) Ping and lead your team directly to push a tower or take the Lord/Turtle objective",
+                        "C) Hit small jungle creeps",
+                        "D) Chase the remaining 2 enemies across the entire map"
+                    ],
+                    "answer": 1
+                }
+            ]
+        }
+
+        # Clean the role title for dictionary lookup
+        self.selected_role_name = role_title
+        self.quiz_questions = role_banks.get(role_title, role_banks["🔮 Mid Lane"])
+        self.current_q_idx = 0
+        self.user_score = 0
+        self.render_quiz_question()
+
+    def render_quiz_question(self):
+        self.clear_content()
+
+        q_data = self.quiz_questions[self.current_q_idx]
+        total_q = len(self.quiz_questions)
+
+        ctk.CTkLabel(
+            self.content,
+            text=f"{self.selected_role_name.upper()} • QUESTION {self.current_q_idx + 1} OF {total_q}",
+            font=("Arial", 11, "bold"),
+            text_color="#58C7FF"
+        ).pack(anchor="w", pady=(10, 2))
+
+        q_card = ctk.CTkFrame(self.content, fg_color="#142C50", corner_radius=12, border_width=1, border_color="#2676BC")
+        q_card.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(
+            q_card,
+            text=q_data["question"],
+            font=("Arial", 12),
+            text_color="#E3ECFA",
+            wraplength=310,
+            justify="left"
+        ).pack(anchor="w", padx=16, pady=16)
+
+        self.selected_option_var = ctk.IntVar(value=-1)
+
+        for idx, option_text in enumerate(q_data["options"]):
+            rb = ctk.CTkRadioButton(
+                self.content,
+                text=option_text,
+                variable=self.selected_option_var,
+                value=idx,
+                font=("Arial", 11),
+                text_color="#FFFFFF",
+                fg_color="#356DFF",
+                hover_color="#254FD1"
+            )
+            rb.pack(anchor="w", padx=8, pady=6)
+
+        ctk.CTkButton(
+            self.content,
+            text="Confirm Answer  →",
+            height=42,
+            corner_radius=8,
+            fg_color="#356DFF",
+            hover_color="#254FD1",
+            font=("Arial", 13, "bold"),
+            command=self.evaluate_quiz_answer
+        ).pack(fill="x", padx=8, pady=(20, 10))
+
+    import cv2
+    from PIL import Image, ImageTk
+
+    # (Inside your MLGuideMobileApp class)
+
+    def render_quiz_question(self):
+        self.clear_content()
+
+        q_data = self.quiz_questions[self.current_q_idx]
+        total_q = len(self.quiz_questions)
+
+        # Header info
+        ctk.CTkLabel(
+            self.content,
+            text=f"{self.selected_role_name.upper()} • QUESTION {self.current_q_idx + 1} OF {total_q}",
+            font=("Arial", 11, "bold"),
+            text_color="#58C7FF"
+        ).pack(anchor="w", pady=(10, 2))
+
+        # --- LOCAL VIDEO CLIP DISPLAY FRAME ---
+        video_frame = ctk.CTkFrame(self.content, fg_color="#0A1628", corner_radius=10, height=160)
+        video_frame.pack(fill="x", pady=5)
+        video_frame.pack_propagate(False)
+
+        self.video_label = ctk.CTkLabel(video_frame, text="")
+        self.video_label.pack(expand=True, fill="both")
+
+        # Map role & question index to local video files (adjust paths as needed)
+        clip_path = q_data.get("clip_path", "assets/clips/default_scenario.mp4")
+        self.play_local_video_frame(clip_path)
+
+        # Question Card
+        q_card = ctk.CTkFrame(self.content, fg_color="#142C50", corner_radius=10, border_width=1,
+                              border_color="#2676BC")
+        q_card.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(
+            q_card,
+            text=q_data["question"],
+            font=("Arial", 11),
+            text_color="#E3ECFA",
+            wraplength=310,
+            justify="left"
+        ).pack(anchor="w", padx=12, pady=10)
+
+        self.selected_option_var = ctk.IntVar(value=-1)
+
+        for idx, option_text in enumerate(q_data["options"]):
+            rb = ctk.CTkRadioButton(
+                self.content,
+                text=option_text,
+                variable=self.selected_option_var,
+                value=idx,
+                font=("Arial", 10),
+                text_color="#FFFFFF",
+                fg_color="#356DFF",
+                hover_color="#254FD1"
+            )
+            rb.pack(anchor="w", padx=8, pady=4)
+
+        ctk.CTkButton(
+            self.content,
+            text="Confirm Answer  →",
+            height=38,
+            corner_radius=8,
+            fg_color="#356DFF",
+            hover_color="#254FD1",
+            font=("Arial", 12, "bold"),
+            command=self.evaluate_quiz_answer
+        ).pack(fill="x", padx=8, pady=(15, 10))
+
+    def play_local_video_frame(self, path):
+        """Grabs the first frame or preview thumbnail from the local host video file."""
+        try:
+            cap = cv2.VideoCapture(path)
+            success, frame = cap.read()
+            if success:
+                # Convert OpenCV BGR to RGB
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = cv2.resize(frame, (310, 150))
+                img = Image.fromarray(frame)
+                img_tk = ImageTk.PhotoImage(image=img)
+                self.video_label.configure(image=img_tk, text="")
+                self.video_label.image = img_tk  # Keep a reference
+            else:
+                self.video_label.configure(text="[ Scenario Preview Clip Unavailable ]", image="")
+            cap.release()
+        except Exception:
+            self.video_label.configure(text="[ Error Loading Local Clip ]", image="")
+
+    def open_history(self):
+        self.set_active_nav(self.btn_nav_history)
+        self.clear_content()
+        ctk.CTkLabel(self.content, text="MATCH HISTORY", font=("Arial", 20, "bold"), text_color="#FFFFFF").pack(anchor="w", pady=(10, 5))
+        ctk.CTkLabel(self.content, text="No previous saved analyses found.", font=("Arial", 12), text_color="#A7B9D4").pack(anchor="w", pady=10)
+
+
+if __name__ == "__main__":
+    app = MLGuideMobileApp()
+    app.mainloop()
